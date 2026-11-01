@@ -17,6 +17,9 @@ import Tasks from "./pages/Tasks";
 import AddTask from "./pages/AddTask";
 import EditTask from "./pages/EditTask";
 import TaskDetails from "./pages/TaskDetails";
+import Teams from "./pages/Teams";
+import Reports from "./pages/Reports";
+import ProjectManagement from "./pages/ProjectManagement";
 
 // Redirect logged-in users away from Login and Signup
 const PublicRoute = ({ children }) => {
@@ -76,6 +79,12 @@ const App = () => {
             <Route path="/tasks/edit/:id" element={<EditTask />}/>
 
             <Route path="/tasks/:id" element={<TaskDetails />} />
+
+            <Route path="/teams" element={<Teams />} />
+
+            <Route path="/reports" element={<Reports />} />
+
+            <Route path="/projects" element={<ProjectManagement />} />
 
           </Route>
 
