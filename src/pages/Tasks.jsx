@@ -19,7 +19,7 @@ const Tasks = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:5000/tasks", {
+      const response = await fetch("https://workasana-backend-xi.vercel.app/tasks", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -78,7 +78,7 @@ const Tasks = () => {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/tasks/${id}`, {
+      const response = await fetch(`https://workasana-backend-xi.vercel.app/tasks/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -110,7 +110,7 @@ const Tasks = () => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/tasks/${taskId}`,
+      `https://workasana-backend-xi.vercel.app/tasks/${taskId}`,
       {
         method: "DELETE",
         headers: {
@@ -135,17 +135,33 @@ const Tasks = () => {
   }
 };
   return (
-    <>
-      <Navbar />
+    <div className="d-flex">
+    <Navbar />
 
-      <div className="container py-4">
+    <main className="flex-grow-1 p-4">
+      <div className="container-fluid">
+
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="mb-0">Task Management</h2>
 
-          <Link to="/tasks/add" className="btn btn-primary">
-            + Add Task
-          </Link>
+          <div className="d-flex align-items-center gap-3">
+           <i className="bi bi-list-task fs-2 text-primary"></i>
+
+          <h2 className="mb-0">Task Management</h2>
+        </div>  
+
+        <div className="d-flex gap-2">
+           <Link to="/dashboard" className="btn btn-outline-secondary">
+           <i className="bi bi-arrow-left me-2"></i>
+            Back to Dashboard
+           </Link>
+
+           <Link to="/tasks/add" className="btn btn-primary">
+            <i className="bi bi-plus-lg me-2"></i>
+            Add Task
+           </Link>
         </div>
+
+      </div>
 
         {/* Search and Filters */}
         <div className="row g-3 mb-4">
@@ -312,7 +328,8 @@ const Tasks = () => {
           </>
         )}
       </div>
-    </>
+      </main>
+    </div>
   );
 };
 

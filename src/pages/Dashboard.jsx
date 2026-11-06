@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -7,184 +6,362 @@ import Navbar from "../components/Navbar";
 const Dashboard = () => {
   const { token, user } = useAuth();
 
+  const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [projectName, setProjectName] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
+  const [projectFilter, setProjectFilter] = useState("All");
+  const [taskFilter, setTaskFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:5000/tasks?myTasks=true",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+  const fetchDashboardData = async () => {
+    try {
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
 
-        const data = await response.json();
+      const [projectResponse, taskResponse] = await Promise.all([
+        fetch("https://workasana-backend-xi.vercel.app/projects", { headers }),
+        fetch("https://workasana-backend-xi.vercel.app/tasks?myTasks=true", { headers }),
+      ]);
 
-        if (!response.ok) {
-          throw new Error(data.message || "Unable to fetch tasks.");
-        }
+      const projectData = await projectResponse.json();
+      const taskData = await taskResponse.json();
 
-        const taskList = Array.isArray(data) ? data : data.tasks;
-
-        if (!Array.isArray(taskList)) {
-          throw new Error("Unexpected task response from the server.");
-        }
-
-        setTasks(taskList);
-      } catch (err) {
-        setError(err.message || "Unable to load tasks.");
-      } finally {
-        setLoading(false);
+      if (!projectResponse.ok) {
+        throw new Error(projectData.message || "Unable to fetch projects.");
       }
-    };
 
+      if (!taskResponse.ok) {
+        throw new Error(taskData.message || "Unable to fetch tasks.");
+      }
+
+      setProjects(Array.isArray(projectData) ? projectData : projectData.projects || []);
+      setTasks(Array.isArray(taskData) ? taskData : taskData.tasks || []);
+    } catch (err) {
+      setError(err.message || "Unable to load dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (token) {
-      fetchTasks();
+      fetchDashboardData();
     } else {
       setLoading(false);
-      setError("Please log in to view your tasks.");
+      setError("Please log in to view the dashboard.");
     }
   }, [token]);
+
+  const handleCreateProject = async (event) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch("http://localhost:5000/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: projectName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to create project.");
+      }
+
+      setProjects((previous) => [...previous, data.project]);
+      setProjectName("");
+      setShowModal(false);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const counts = {
     total: tasks.length,
     todo: tasks.filter((task) => task.status === "To Do").length,
     progress: tasks.filter((task) => task.status === "In Progress").length,
     completed: tasks.filter((task) => task.status === "Completed").length,
-    blocked: tasks.filter((task) => task.status === "Blocked").length,
   };
 
-  const cards = [
-    { title: "Total Tasks", count: counts.total, color: "primary" },
-    { title: "To Do", count: counts.todo, color: "secondary" },
-    { title: "In Progress", count: counts.progress, color: "info" },
-    { title: "Completed", count: counts.completed, color: "success" },
-    { title: "Blocked", count: counts.blocked, color: "danger" },
-  ];
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch = project.name
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
+
+    const projectTasks = tasks.filter(
+      (task) => task.project?._id === project._id
+    );
+
+    const status = projectTasks.some(
+      (task) => task.status === "In Progress"
+    )
+      ? "In Progress"
+      : projectTasks.length > 0 &&
+        projectTasks.every((task) => task.status === "Completed")
+      ? "Completed"
+      : "To Do";
+
+    return (
+      matchesSearch &&
+      (projectFilter === "All" || status === projectFilter)
+    );
+  });
+
+  const filteredTasks = tasks.filter((task) => {
+    return taskFilter === "All" || task.status === taskFilter;
+  });
 
   return (
-    <>
+    <div className="d-flex bg-light min-vh-100">
       <Navbar />
 
-      <div className="container py-4">
-        <h2>Dashboard</h2>
+      <main className="flex-grow-1 p-4" style={{ minWidth: 0 }}>
+        <div className="container-fluid">
 
-        <p className="text-muted">
-          Welcome back, {user?.name || "User"}!
-        </p>
+          <input
+            type="text"
+            className="form-control mb-4"
+            placeholder="Search projects..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
 
-        {loading && <p>Loading dashboard...</p>}
+          <h5 className="mb-4">
+            Welcome back, {user?.name || "User"}!
+          </h5>
 
-        {error && (
-          <div className="alert alert-danger">{error}</div>
-        )}
+          {loading && <p>Loading dashboard...</p>}
 
-        {!loading && !error && (
-          <>
-            {/* Task Summary Cards */}
-            <div className="row g-3 mt-2">
-              {cards.map((card) => (
-                <div className="col-12 col-sm-6 col-lg" key={card.title}>
-                  <div className={`card border-${card.color} h-100`}>
-                    <div className="card-body">
-                      <h6 className="text-muted">{card.title}</h6>
-                      <h2 className={`text-${card.color}`}>
-                        {card.count}
-                      </h2>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {error && <div className="alert alert-danger">{error}</div>}
 
-            {/* Assigned Tasks */}
-            <div className="mt-5">
+          {!loading && !error && (
+            <>
+              {/* Projects Section */}
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h4>My Assigned Tasks</h4>
+                <h3 className="fw-bold mb-0">Projects</h3>
 
-                <Link to="/tasks" className="btn btn-primary btn-sm">
-                  View All Tasks
-                </Link>
+                <div className="d-flex gap-2">
+                  <select
+                    className="form-select"
+                    value={projectFilter}
+                    onChange={(event) => setProjectFilter(event.target.value)}
+                  >
+                    <option value="All">All Projects</option>
+                    <option value="To Do">To Do</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+
+                  <button
+                    className="btn btn-primary text-nowrap"
+                    onClick={() => setShowModal(true)}
+                  >
+                    + New Project
+                  </button>
+                </div>
               </div>
 
-              {tasks.length === 0 ? (
-                <div className="alert alert-info">
-                  No tasks have been assigned to you yet.
+              <div className="row g-3 mb-5">
+                {filteredProjects.length === 0 ? (
+                  <p className="text-muted">No projects found.</p>
+                ) : (
+                  filteredProjects.map((project) => {
+                    const projectTasks = tasks.filter(
+                      (task) => task.project?._id === project._id
+                    );
+
+                    const completed = projectTasks.filter(
+                      (task) => task.status === "Completed"
+                    ).length;
+
+                    return (
+                      <div className="col-12 col-md-6 col-xl-4" key={project._id}>
+                        <div className="card border-0 shadow-sm h-100">
+                          <div className="card-body">
+                            <span className="badge bg-primary-subtle text-primary mb-3">
+                              Project
+                            </span>
+
+                            <h5 className="fw-bold">{project.name}</h5>
+
+                            <p className="text-muted mb-2">
+                              {projectTasks.length} Tasks
+                            </p>
+
+                            <p className="text-muted small mb-0">
+                              {completed} tasks completed
+                            </p>
+
+                            <div className="progress mt-3" style={{ height: "6px" }}>
+                              <div
+                                className="progress-bar"
+                                style={{
+                                  width: `${
+                                    projectTasks.length
+                                      ? (completed / projectTasks.length) * 100
+                                      : 0
+                                  }%`,
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* My Tasks Section */}
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h3 className="fw-bold mb-0">My Tasks</h3>
+
+                <div className="d-flex gap-2">
+                  <select
+                    className="form-select"
+                    value={taskFilter}
+                    onChange={(event) => setTaskFilter(event.target.value)}
+                  >
+                    <option value="All">All Tasks</option>
+                    <option value="To Do">To Do</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Blocked">Blocked</option>
+                  </select>
+
+                  <Link to="/tasks/add" className="btn btn-primary text-nowrap">
+                    + New Task
+                  </Link>
                 </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-bordered table-hover align-middle">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Task Name</th>
-                        <th>Project</th>
-                        <th>Team</th>
-                        <th>Due Date</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
+              </div>
 
-                    <tbody>
-                      {tasks.map((task) => (
-                        <tr key={task._id}>
-                          <td>{task.name}</td>
+              <div className="row g-3">
+                {filteredTasks.length === 0 ? (
+                  <div className="col-12">
+                    <div className="alert alert-info">
+                      No assigned tasks found.
+                    </div>
+                  </div>
+                ) : (
+                  filteredTasks.map((task) => (
+                    <div className="col-12 col-md-6 col-xl-4" key={task._id}>
+                      <div className="card border-0 shadow-sm h-100">
+                        <div className="card-body">
+                          <span
+                            className={`badge mb-3 ${
+                              task.status === "Completed"
+                                ? "bg-success"
+                                : task.status === "In Progress"
+                                ? "bg-info text-dark"
+                                : task.status === "Blocked"
+                                ? "bg-danger"
+                                : "bg-warning text-dark"
+                            }`}
+                          >
+                            {task.status}
+                          </span>
 
-                          <td>{task.project?.name || "N/A"}</td>
+                          <h5 className="fw-bold">{task.name}</h5>
 
-                          <td>{task.team?.name || "N/A"}</td>
+                          <p className="text-muted small mb-2">
+                            {task.project?.name || "No project"}
+                          </p>
 
-                          <td>
+                          <p className="text-muted small mb-2">
+                            Due:{" "}
                             {task.dueDate
                               ? new Date(task.dueDate).toLocaleDateString()
-                              : "N/A"}
-                          </td>
+                              : "Not set"}
+                          </p>
 
-                          <td>
-                            <span
-                              className={`badge ${
-                                task.priority === "High"
-                                  ? "bg-danger"
-                                  : task.priority === "Medium"
-                                  ? "bg-warning text-dark"
-                                  : "bg-success"
-                              }`}
-                            >
-                              {task.priority}
-                            </span>
-                          </td>
+                          <span
+                            className={`badge ${
+                              task.priority === "High"
+                                ? "bg-danger"
+                                : task.priority === "Medium"
+                                ? "bg-warning text-dark"
+                                : "bg-success"
+                            }`}
+                          >
+                            {task.priority}
+                          </span>
 
-                          <td>
-                            <span
-                              className={`badge ${
-                                task.status === "Completed"
-                                  ? "bg-success"
-                                  : task.status === "In Progress"
-                                  ? "bg-info text-dark"
-                                  : task.status === "Blocked"
-                                  ? "bg-danger"
-                                  : "bg-secondary"
-                              }`}
+                          <div className="mt-3">
+                            <Link
+                              to={`/tasks/${task._id}`}
+                              className="btn btn-outline-primary btn-sm"
                             >
-                              {task.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                              View Task
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </main>
+
+      {/* New Project Modal */}
+      {showModal && (
+        <div
+          className="modal d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form onSubmit={handleCreateProject}>
+                <div className="modal-header">
+                  <h5 className="modal-title">Create New Project</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowModal(false)}
+                  ></button>
                 </div>
-              )}
+
+                <div className="modal-body">
+                  <label className="form-label">Project Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter project name"
+                    value={projectName}
+                    onChange={(event) => setProjectName(event.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Cancel
+                  </button>
+
+                  <button type="submit" className="btn btn-primary">
+                    Create
+                  </button>
+                </div>
+              </form>
             </div>
-          </>
-        )}
-      </div>
-    </>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

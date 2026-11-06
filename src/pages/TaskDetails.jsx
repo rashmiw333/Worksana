@@ -15,7 +15,7 @@ function TaskDetails() {
     const fetchTask = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/tasks/${id}`,
+          `https://workasana-backend-xi.vercel.app/tasks/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -18,7 +18,7 @@ const Login = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/auth/login",
+        "https://workasana-backend-xi.vercel.app/auth/login",
         {
           method: "POST",
           headers: {

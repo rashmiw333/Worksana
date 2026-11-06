@@ -20,7 +20,7 @@ const Teams = () => {
     try {
       setLoading(true);
 
-      const response = await fetch("http://localhost:5000/teams", {
+      const response = await fetch("https://workasana-backend-xi.vercel.app/teams", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -53,7 +53,7 @@ const Teams = () => {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:5000/teams", {
+      const response = await fetch("https://workasana-backend-xi.vercel.app/teams", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

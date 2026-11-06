@@ -1,71 +1,66 @@
-
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
+  const links = [
+    { name: "Dashboard", path: "/dashboard", icon: "bi-grid" },
+    { name: "Projects", path: "/projects", icon: "bi-kanban" },
+    { name: "Team", path: "/teams", icon: "bi-people" },
+    { name: "Reports", path: "/reports", icon: "bi-bar-chart" },
+  ];
+
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div className="container">
-        <Link className="navbar-brand" to="/dashboard">
-          Workasana
-        </Link>
+    <aside
+      className="bg-light border-end p-4 d-flex flex-column"
+      style={{ width: "230px", minHeight: "100vh" }}
+    >
+      <Link
+        to="/dashboard"
+        className="text-decoration-none fs-3 fw-bold mb-5"
+        style={{ color: "#6955ed" }}
+      >
+        workasana
+      </Link>
+
+      <div className="nav flex-column gap-3">
+        {links.map((link) => (
+          <Link
+            key={link.path}
+            to={link.path}
+            className={`nav-link ${
+              location.pathname === link.path
+                ? "text-primary fw-bold"
+                : "text-secondary"
+            }`}
+          >
+            <i className={`bi ${link.icon} me-2`}></i>
+            {link.name}
+          </Link>
+        ))}
+      </div>
+
+      <div className="mt-auto">
+        <p className="text-muted small mb-2">
+          {user?.name || user?.email || "Welcome"}
+        </p>
 
         <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#workasanaNavbar"
-          aria-controls="workasanaNavbar"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
+          className="btn btn-outline-danger btn-sm w-100"
+          onClick={handleLogout}
         >
-          <span className="navbar-toggler-icon"></span>
+          Logout
         </button>
-
-        <div className="collapse navbar-collapse" id="workasanaNavbar">
-          <div className="navbar-nav me-auto">
-            <Link className="nav-link" to="/dashboard">
-              Dashboard
-            </Link>
-
-            <Link className="nav-link" to="/tasks">
-              Tasks
-            </Link>
-
-            <Link className="nav-link" to="/teams">
-              Teams
-            </Link>
-
-            <Link className="nav-link" to="/reports">
-              Reports
-            </Link>
-
-            <Link className="nav-link" to="/projects">
-              Projects
-            </Link>
-          </div>
-
-          <span className="navbar-text text-white me-3">
-            {user?.name || user?.email || "Welcome"}
-          </span>
-
-          <button
-            className="btn btn-outline-light btn-sm"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
-        </div>
       </div>
-    </nav>
+    </aside>
   );
 };
 

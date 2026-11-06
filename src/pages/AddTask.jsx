@@ -5,7 +5,8 @@ import Select from "react-select";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 
-const API_URL = "http://localhost:5000";
+//const API_URL = "http://localhost:5000";
+const API_URL ="https://workasana-backend-xi.vercel.app";
 
 const AddTask = () => {
   const { token } = useAuth();
@@ -207,12 +208,12 @@ const AddTask = () => {
   };
 
   return (
-    <>
+    <div className="d-flex">
       <Navbar />
 
-      <div className="container py-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="mb-0">Add Task</h2>
+      <main className="flex-grow-1 p-4" style={{ minWidth: 0 }}>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+           <h2 className="mb-0">Add Task</h2>
 
           <Link to="/tasks" className="btn btn-outline-secondary">
             Back to Tasks
@@ -444,8 +445,8 @@ const AddTask = () => {
             </div>
           </form>
         )}
-      </div>
-    </>
+      </main>
+    </div>
   );
 };
 

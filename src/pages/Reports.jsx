@@ -60,9 +60,9 @@ const Reports = () => {
 
         const [lastWeekResponse, pendingResponse, closedResponse] =
           await Promise.all([
-            fetch("http://localhost:5000/report/last-week", { headers }),
-            fetch("http://localhost:5000/report/pending", { headers }),
-            fetch("http://localhost:5000/report/closed-tasks", { headers }),
+            fetch("https://workasana-backend-xi.vercel.app/report/last-week", { headers }),
+            fetch("https://workasana-backend-xi.vercel.app/report/pending", { headers }),
+            fetch("https://workasana-backend-xi.vercel.app/report/closed-tasks", { headers }),
           ]);
 
         const responses = [

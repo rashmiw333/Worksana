@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { useAuth } from "../context/AuthContext";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://workasana-backend-xi.vercel.app";
 
 function EditTask() {
   const { id } = useParams();

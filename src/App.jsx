@@ -98,8 +98,6 @@ const App = () => {
             element={<Navigate to="/login" replace />}
           />
 
-          
-
         </Routes>
       </BrowserRouter>
     </AuthProvider>

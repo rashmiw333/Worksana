@@ -31,9 +31,9 @@ const ProjectManagement = () => {
         setLoading(true);
 
         const [projectRes, userRes, tagRes] = await Promise.all([
-          fetch("http://localhost:5000/projects", { headers }),
-          fetch("http://localhost:5000/users", { headers }),
-          fetch("http://localhost:5000/tags", { headers }),
+          fetch("https://workasana-backend-xi.vercel.app/projects", { headers }),
+          fetch("https://workasana-backend-xi.vercel.app/users", { headers }),
+          fetch("https://workasana-backend-xi.vercel.app/tags", { headers }),
         ]);
 
         if (!projectRes.ok || !userRes.ok || !tagRes.ok) {
@@ -92,7 +92,7 @@ const ProjectManagement = () => {
         }
 
         const response = await fetch(
-          `http://localhost:5000/tasks?${params.toString()}`,
+          `https://workasana-backend-xi.vercel.app/tasks?${params.toString()}`,
           { headers }
         );
 
