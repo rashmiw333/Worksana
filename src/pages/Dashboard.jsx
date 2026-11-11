@@ -60,7 +60,7 @@ const Dashboard = () => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/projects", {
+      const response = await fetch("https://workasana-backend-xi.vercel.app/projects", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
