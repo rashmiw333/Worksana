@@ -1,21 +1,35 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const ProjectManagement = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [tags, setTags] = useState([]);
 
-  const [selectedProject, setSelectedProject] = useState("");
-  const [selectedOwner, setSelectedOwner] = useState("");
-  const [selectedTag, setSelectedTag] = useState("");
-  const [sortBy, setSortBy] = useState("");
+  // Initialize filters from URL
+  const [selectedProject, setSelectedProject] = useState(
+    searchParams.get("project") || ""
+  );
+
+  const [selectedOwner, setSelectedOwner] = useState(
+    searchParams.get("owner") || ""
+  );
+
+  const [selectedTag, setSelectedTag] = useState(
+    searchParams.get("tag") || ""
+  );
+
+  const [sortBy, setSortBy] = useState(
+    searchParams.get("sort") || ""
+  );
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,16 +38,26 @@ const ProjectManagement = () => {
     Authorization: `Bearer ${token}`,
   };
 
-  // Fetch projects, users and tags
+  // Fetching projects, users and tags
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const [projectRes, userRes, tagRes] = await Promise.all([
-          fetch("https://workasana-backend-xi.vercel.app/projects", { headers }),
-          fetch("https://workasana-backend-xi.vercel.app/users", { headers }),
-          fetch("https://workasana-backend-xi.vercel.app/tags", { headers }),
+          fetch(
+            "https://workasana-backend-xi.vercel.app/projects",
+            { headers }
+          ),
+          fetch(
+            "https://workasana-backend-xi.vercel.app/users",
+            { headers }
+          ),
+          fetch(
+            "https://workasana-backend-xi.vercel.app/tags",
+            { headers }
+          ),
         ]);
 
         if (!projectRes.ok || !userRes.ok || !tagRes.ok) {
@@ -48,9 +72,22 @@ const ProjectManagement = () => {
         setUsers(userData);
         setTags(tagData);
 
-        if (projectData.length > 0) {
+        //  URL if it exists
+        const projectFromUrl = searchParams.get("project");
+
+        const projectExists = projectData.some(
+          (project) => project._id === projectFromUrl
+        );
+
+        if (projectExists) {
+          setSelectedProject(projectFromUrl);
+        } else if (projectData.length > 0) {
+          // when URL has no valid project
           setSelectedProject(projectData[0]._id);
+        } else {
+          setSelectedProject("");
         }
+
       } catch (error) {
         setError(error.message);
       } finally {
@@ -60,10 +97,42 @@ const ProjectManagement = () => {
 
     if (token) {
       fetchData();
+    } else {
+      setLoading(false);
+      setError("Please log in to view projects.");
     }
   }, [token]);
 
-  // Fetch tasks whenever project, filters or sorting changes
+  // URL update when filter change
+  useEffect(() => {
+    const params = {};
+
+    if (selectedProject) {
+      params.project = selectedProject;
+    }
+
+    if (selectedOwner) {
+      params.owner = selectedOwner;
+    }
+
+    if (selectedTag) {
+      params.tag = selectedTag;
+    }
+
+    if (sortBy) {
+      params.sort = sortBy;
+    }
+
+    setSearchParams(params);
+  }, [
+    selectedProject,
+    selectedOwner,
+    selectedTag,
+    sortBy,
+    setSearchParams,
+  ]);
+
+  // tasks fetching for project, filters or sorting changes
   useEffect(() => {
     const fetchTasks = async () => {
       if (!selectedProject) {
@@ -102,6 +171,7 @@ const ProjectManagement = () => {
 
         const data = await response.json();
         setTasks(data);
+
       } catch (error) {
         setError(error.message);
       } finally {
@@ -111,17 +181,28 @@ const ProjectManagement = () => {
 
     if (token && selectedProject) {
       fetchTasks();
+    } else {
+      setTasks([]);
     }
-  }, [token, selectedProject, selectedOwner, selectedTag, sortBy]);
+  }, [
+    token,
+    selectedProject,
+    selectedOwner,
+    selectedTag,
+    sortBy,
+  ]);
 
   const getStatusClass = (status) => {
     switch (status) {
       case "Completed":
         return "bg-success";
+
       case "In Progress":
         return "bg-primary";
+
       case "Blocked":
         return "bg-danger";
+
       default:
         return "bg-secondary";
     }
@@ -131,17 +212,24 @@ const ProjectManagement = () => {
     switch (priority) {
       case "High":
         return "text-danger";
+
       case "Medium":
         return "text-warning";
+
       case "Low":
         return "text-success";
+
       default:
         return "text-secondary";
     }
   };
 
   if (loading && projects.length === 0) {
-    return <div className="container mt-4">Loading projects...</div>;
+    return (
+      <div className="container mt-4">
+        Loading projects...
+      </div>
+    );
   }
 
   return (
@@ -149,7 +237,9 @@ const ProjectManagement = () => {
 
       {/* Header */}
       <div className="bg-white border-bottom p-3">
-        <h3 className="text-center mb-0">Project Management</h3>
+        <h3 className="text-center mb-0">
+          Project Management
+        </h3>
       </div>
 
       <div className="row">
@@ -168,6 +258,7 @@ const ProjectManagement = () => {
         <div className="col-md-9 col-lg-10 p-4">
 
           <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+
             <div>
               <label className="form-label fw-semibold">
                 Select Project
@@ -177,12 +268,17 @@ const ProjectManagement = () => {
                 className="form-select"
                 style={{ minWidth: "250px" }}
                 value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
+                onChange={(e) =>
+                  setSelectedProject(e.target.value)
+                }
               >
                 <option value="">Select a project</option>
 
                 {projects.map((project) => (
-                  <option key={project._id} value={project._id}>
+                  <option
+                    key={project._id}
+                    value={project._id}
+                  >
                     {project.name}
                   </option>
                 ))}
@@ -196,6 +292,7 @@ const ProjectManagement = () => {
             >
               + Add New Task
             </button>
+
           </div>
 
           {projects.length === 0 ? (
@@ -204,59 +301,84 @@ const ProjectManagement = () => {
             </div>
           ) : (
             <>
+
               <h4 className="mb-3">
                 Task List -{" "}
-                {projects.find((p) => p._id === selectedProject)?.name}
+                {projects.find(
+                  (p) => p._id === selectedProject
+                )?.name}
               </h4>
 
               {/* Filters */}
               <div className="card shadow-sm border-0 mb-4">
                 <div className="card-body">
+
                   <div className="row g-3">
 
+                    {/* Owner Filter */}
                     <div className="col-md-4">
-                      <label className="form-label">Filter by Owner</label>
+                      <label className="form-label">
+                        Filter by Owner
+                      </label>
 
                       <select
                         className="form-select"
                         value={selectedOwner}
-                        onChange={(e) => setSelectedOwner(e.target.value)}
+                        onChange={(e) =>
+                          setSelectedOwner(e.target.value)
+                        }
                       >
                         <option value="">All Owners</option>
 
                         {users.map((user) => (
-                          <option key={user._id} value={user._id}>
+                          <option
+                            key={user._id}
+                            value={user._id}
+                          >
                             {user.name}
                           </option>
                         ))}
                       </select>
                     </div>
 
+                    {/* Tag Filter */}
                     <div className="col-md-4">
-                      <label className="form-label">Filter by Tag</label>
+                      <label className="form-label">
+                        Filter by Tag
+                      </label>
 
                       <select
                         className="form-select"
                         value={selectedTag}
-                        onChange={(e) => setSelectedTag(e.target.value)}
+                        onChange={(e) =>
+                          setSelectedTag(e.target.value)
+                        }
                       >
                         <option value="">All Tags</option>
 
                         {tags.map((tag) => (
-                          <option key={tag._id} value={tag.name}>
+                          <option
+                            key={tag._id}
+                            value={tag.name}
+                          >
                             {tag.name}
                           </option>
                         ))}
                       </select>
                     </div>
 
+                    {/* Sort */}
                     <div className="col-md-4">
-                      <label className="form-label">Sort By</label>
+                      <label className="form-label">
+                        Sort By
+                      </label>
 
                       <select
                         className="form-select"
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
+                        onChange={(e) =>
+                          setSortBy(e.target.value)
+                        }
                       >
                         <option value="">Default</option>
                         <option value="dueDate">Due Date</option>
@@ -270,7 +392,9 @@ const ProjectManagement = () => {
 
               {/* Task List */}
               {error ? (
-                <div className="alert alert-danger">{error}</div>
+                <div className="alert alert-danger">
+                  {error}
+                </div>
               ) : loading ? (
                 <p>Loading tasks...</p>
               ) : tasks.length === 0 ? (
@@ -279,15 +403,21 @@ const ProjectManagement = () => {
                 </div>
               ) : (
                 <div className="row">
+
                   {tasks.map((task) => (
-                    <div className="col-12 mb-3" key={task._id}>
+                    <div
+                      className="col-12 mb-3"
+                      key={task._id}
+                    >
                       <div className="card shadow-sm border-0">
                         <div className="card-body">
 
                           <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
 
                             <div>
-                              <h5 className="mb-2">{task.name}</h5>
+                              <h5 className="mb-2">
+                                {task.name}
+                              </h5>
 
                               <div className="mb-2">
                                 <span
@@ -296,7 +426,9 @@ const ProjectManagement = () => {
                                   {task.status}
                                 </span>
 
-                                <span className={getPriorityClass(task.priority)}>
+                                <span
+                                  className={getPriorityClass(task.priority)}
+                                >
                                   {task.priority} Priority
                                 </span>
                               </div>
@@ -309,14 +441,18 @@ const ProjectManagement = () => {
                               <p className="text-muted mb-1">
                                 <strong>Owner:</strong>{" "}
                                 {task.owners?.length
-                                  ? task.owners.map((owner) => owner.name).join(", ")
+                                  ? task.owners
+                                      .map((owner) => owner.name)
+                                      .join(", ")
                                   : "Not assigned"}
                               </p>
 
                               <p className="text-muted mb-1">
                                 <strong>Due Date:</strong>{" "}
                                 {task.dueDate
-                                  ? new Date(task.dueDate).toLocaleDateString()
+                                  ? new Date(
+                                      task.dueDate
+                                    ).toLocaleDateString()
                                   : "Not set"}
                               </p>
 
@@ -330,12 +466,16 @@ const ProjectManagement = () => {
                                   </span>
                                 ))}
                               </div>
+
                             </div>
 
                             <div className="d-flex flex-wrap gap-2">
+
                               <button
                                 className="btn btn-outline-primary btn-sm"
-                                onClick={() => navigate(`/tasks/${task._id}`)}
+                                onClick={() =>
+                                  navigate(`/tasks/${task._id}`)
+                                }
                               >
                                 View
                               </button>
@@ -348,18 +488,22 @@ const ProjectManagement = () => {
                               >
                                 Edit
                               </button>
+
                             </div>
 
                           </div>
+
                         </div>
                       </div>
                     </div>
                   ))}
+
                 </div>
               )}
 
             </>
           )}
+
         </div>
       </div>
     </div>
