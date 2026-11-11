@@ -2,11 +2,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 
 const ProjectManagement = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
-
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [projects, setProjects] = useState([]);
@@ -14,7 +14,6 @@ const ProjectManagement = () => {
   const [users, setUsers] = useState([]);
   const [tags, setTags] = useState([]);
 
-  // Initialize filters from URL
   const [selectedProject, setSelectedProject] = useState(
     searchParams.get("project") || ""
   );
@@ -38,7 +37,7 @@ const ProjectManagement = () => {
     Authorization: `Bearer ${token}`,
   };
 
-  // Fetching projects, users and tags
+  // Fetch projects, users and tags
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -46,18 +45,15 @@ const ProjectManagement = () => {
         setError("");
 
         const [projectRes, userRes, tagRes] = await Promise.all([
-          fetch(
-            "https://workasana-backend-xi.vercel.app/projects",
-            { headers }
-          ),
-          fetch(
-            "https://workasana-backend-xi.vercel.app/users",
-            { headers }
-          ),
-          fetch(
-            "https://workasana-backend-xi.vercel.app/tags",
-            { headers }
-          ),
+          fetch("https://workasana-backend-xi.vercel.app/projects", {
+            headers,
+          }),
+          fetch("https://workasana-backend-xi.vercel.app/users", {
+            headers,
+          }),
+          fetch("https://workasana-backend-xi.vercel.app/tags", {
+            headers,
+          }),
         ]);
 
         if (!projectRes.ok || !userRes.ok || !tagRes.ok) {
@@ -72,7 +68,6 @@ const ProjectManagement = () => {
         setUsers(userData);
         setTags(tagData);
 
-        //  URL if it exists
         const projectFromUrl = searchParams.get("project");
 
         const projectExists = projectData.some(
@@ -82,12 +77,10 @@ const ProjectManagement = () => {
         if (projectExists) {
           setSelectedProject(projectFromUrl);
         } else if (projectData.length > 0) {
-          // when URL has no valid project
           setSelectedProject(projectData[0]._id);
         } else {
           setSelectedProject("");
         }
-
       } catch (error) {
         setError(error.message);
       } finally {
@@ -103,7 +96,7 @@ const ProjectManagement = () => {
     }
   }, [token]);
 
-  // URL update when filter change
+  // Update URL when filters change
   useEffect(() => {
     const params = {};
 
@@ -132,7 +125,7 @@ const ProjectManagement = () => {
     setSearchParams,
   ]);
 
-  // tasks fetching for project, filters or sorting changes
+  // Fetch tasks when project or filters change
   useEffect(() => {
     const fetchTasks = async () => {
       if (!selectedProject) {
@@ -171,7 +164,6 @@ const ProjectManagement = () => {
 
         const data = await response.json();
         setTasks(data);
-
       } catch (error) {
         setError(error.message);
       } finally {
@@ -224,288 +216,269 @@ const ProjectManagement = () => {
     }
   };
 
-  if (loading && projects.length === 0) {
-    return (
-      <div className="container mt-4">
-        Loading projects...
-      </div>
-    );
-  }
-
   return (
-    <div className="container-fluid bg-light min-vh-100">
+    <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
+      <Navbar />
 
-      {/* Header */}
-      <div className="bg-white border-bottom p-3">
-        <h3 className="text-center mb-0">
-          Project Management
-        </h3>
-      </div>
-
-      <div className="row">
-
-        {/* Sidebar */}
-        <div className="col-md-3 col-lg-2 bg-white border-end min-vh-100 p-4">
-          <button
-            className="btn btn-outline-primary w-100"
-            onClick={() => navigate("/dashboard")}
-          >
-            Back to Dashboard
-          </button>
+      {/* Main Content */}
+      <main className="flex-grow-1" style={{ minWidth: 0 }}>
+        {/* Header */}
+        <div className="bg-white border-bottom p-3">
+          <h3 className="mb-0 fw-bold">Project Management</h3>
         </div>
 
-        {/* Main Content */}
-        <div className="col-md-9 col-lg-10 p-4">
-
-          <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-
-            <div>
-              <label className="form-label fw-semibold">
-                Select Project
-              </label>
-
-              <select
-                className="form-select"
-                style={{ minWidth: "250px" }}
-                value={selectedProject}
-                onChange={(e) =>
-                  setSelectedProject(e.target.value)
-                }
-              >
-                <option value="">Select a project</option>
-
-                {projects.map((project) => (
-                  <option
-                    key={project._id}
-                    value={project._id}
-                  >
-                    {project.name}
-                  </option>
-                ))}
-              </select>
+        <div className="container-fluid p-3 p-md-4">
+          {error && (
+            <div className="alert alert-danger">
+              {error}
             </div>
+          )}
 
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate("/tasks/add")}
-              disabled={!selectedProject}
-            >
-              + Add New Task
-            </button>
-
-          </div>
-
-          {projects.length === 0 ? (
+          {loading && projects.length === 0 ? (
+            <p>Loading projects...</p>
+          ) : projects.length === 0 ? (
             <div className="alert alert-info">
               No projects available. Please create a project first.
             </div>
           ) : (
             <>
+              {/* Project Selection */}
+              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-3 mb-4">
+                <div className="flex-grow-1">
+                  <label className="form-label fw-semibold">
+                    Select Project
+                  </label>
 
-              <h4 className="mb-3">
-                Task List -{" "}
-                {projects.find(
-                  (p) => p._id === selectedProject
-                )?.name}
-              </h4>
+                  <select
+                    className="form-select"
+                    value={selectedProject}
+                    onChange={(e) =>
+                      setSelectedProject(e.target.value)
+                    }
+                  >
+                    <option value="">Select a project</option>
 
-              {/* Filters */}
-              <div className="card shadow-sm border-0 mb-4">
-                <div className="card-body">
-
-                  <div className="row g-3">
-
-                    {/* Owner Filter */}
-                    <div className="col-md-4">
-                      <label className="form-label">
-                        Filter by Owner
-                      </label>
-
-                      <select
-                        className="form-select"
-                        value={selectedOwner}
-                        onChange={(e) =>
-                          setSelectedOwner(e.target.value)
-                        }
+                    {projects.map((project) => (
+                      <option
+                        key={project._id}
+                        value={project._id}
                       >
-                        <option value="">All Owners</option>
-
-                        {users.map((user) => (
-                          <option
-                            key={user._id}
-                            value={user._id}
-                          >
-                            {user.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Tag Filter */}
-                    <div className="col-md-4">
-                      <label className="form-label">
-                        Filter by Tag
-                      </label>
-
-                      <select
-                        className="form-select"
-                        value={selectedTag}
-                        onChange={(e) =>
-                          setSelectedTag(e.target.value)
-                        }
-                      >
-                        <option value="">All Tags</option>
-
-                        {tags.map((tag) => (
-                          <option
-                            key={tag._id}
-                            value={tag.name}
-                          >
-                            {tag.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Sort */}
-                    <div className="col-md-4">
-                      <label className="form-label">
-                        Sort By
-                      </label>
-
-                      <select
-                        className="form-select"
-                        value={sortBy}
-                        onChange={(e) =>
-                          setSortBy(e.target.value)
-                        }
-                      >
-                        <option value="">Default</option>
-                        <option value="dueDate">Due Date</option>
-                        <option value="priority">Priority</option>
-                      </select>
-                    </div>
-
-                  </div>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
+                <button
+                  className="btn btn-primary text-nowrap"
+                  onClick={() => navigate("/tasks/add")}
+                  disabled={!selectedProject}
+                >
+                  + Add New Task
+                </button>
               </div>
 
-              {/* Task List */}
-              {error ? (
-                <div className="alert alert-danger">
-                  {error}
-                </div>
-              ) : loading ? (
-                <p>Loading tasks...</p>
-              ) : tasks.length === 0 ? (
-                <div className="alert alert-info">
-                  No tasks found for this project.
-                </div>
-              ) : (
-                <div className="row">
+              {/* Selected Project Task List */}
+              {selectedProject && (
+                <>
+                  <h4 className="mb-3">
+                    Task List -{" "}
+                    {projects.find(
+                      (project) => project._id === selectedProject
+                    )?.name}
+                  </h4>
 
-                  {tasks.map((task) => (
-                    <div
-                      className="col-12 mb-3"
-                      key={task._id}
-                    >
-                      <div className="card shadow-sm border-0">
-                        <div className="card-body">
+                  {/* Filters */}
+                  <div className="card shadow-sm border-0 mb-4">
+                    <div className="card-body">
+                      <div className="row g-3">
+                        {/* Owner Filter */}
+                        <div className="col-12 col-md-4">
+                          <label className="form-label">
+                            Filter by Owner
+                          </label>
 
-                          <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                          <select
+                            className="form-select"
+                            value={selectedOwner}
+                            onChange={(e) =>
+                              setSelectedOwner(e.target.value)
+                            }
+                          >
+                            <option value="">All Owners</option>
 
-                            <div>
-                              <h5 className="mb-2">
-                                {task.name}
-                              </h5>
-
-                              <div className="mb-2">
-                                <span
-                                  className={`badge ${getStatusClass(task.status)} me-2`}
-                                >
-                                  {task.status}
-                                </span>
-
-                                <span
-                                  className={getPriorityClass(task.priority)}
-                                >
-                                  {task.priority} Priority
-                                </span>
-                              </div>
-
-                              <p className="text-muted mb-1">
-                                <strong>Team:</strong>{" "}
-                                {task.team?.name || "Not assigned"}
-                              </p>
-
-                              <p className="text-muted mb-1">
-                                <strong>Owner:</strong>{" "}
-                                {task.owners?.length
-                                  ? task.owners
-                                      .map((owner) => owner.name)
-                                      .join(", ")
-                                  : "Not assigned"}
-                              </p>
-
-                              <p className="text-muted mb-1">
-                                <strong>Due Date:</strong>{" "}
-                                {task.dueDate
-                                  ? new Date(
-                                      task.dueDate
-                                    ).toLocaleDateString()
-                                  : "Not set"}
-                              </p>
-
-                              <div className="mt-2">
-                                {task.tags?.map((tag) => (
-                                  <span
-                                    className="badge bg-light text-dark border me-2"
-                                    key={tag._id}
-                                  >
-                                    {tag.name}
-                                  </span>
-                                ))}
-                              </div>
-
-                            </div>
-
-                            <div className="d-flex flex-wrap gap-2">
-
-                              <button
-                                className="btn btn-outline-primary btn-sm"
-                                onClick={() =>
-                                  navigate(`/tasks/${task._id}`)
-                                }
+                            {users.map((user) => (
+                              <option
+                                key={user._id}
+                                value={user._id}
                               >
-                                View
-                              </button>
+                                {user.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                              <button
-                                className="btn btn-outline-warning btn-sm"
-                                onClick={() =>
-                                  navigate(`/tasks/edit/${task._id}`)
-                                }
+                        {/* Tag Filter */}
+                        <div className="col-12 col-md-4">
+                          <label className="form-label">
+                            Filter by Tag
+                          </label>
+
+                          <select
+                            className="form-select"
+                            value={selectedTag}
+                            onChange={(e) =>
+                              setSelectedTag(e.target.value)
+                            }
+                          >
+                            <option value="">All Tags</option>
+
+                            {tags.map((tag) => (
+                              <option
+                                key={tag._id}
+                                value={tag.name}
                               >
-                                Edit
-                              </button>
+                                {tag.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                            </div>
+                        {/* Sort */}
+                        <div className="col-12 col-md-4">
+                          <label className="form-label">
+                            Sort By
+                          </label>
 
-                          </div>
-
+                          <select
+                            className="form-select"
+                            value={sortBy}
+                            onChange={(e) =>
+                              setSortBy(e.target.value)
+                            }
+                          >
+                            <option value="">Default</option>
+                            <option value="dueDate">Due Date</option>
+                            <option value="priority">Priority</option>
+                          </select>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
 
-                </div>
+                  {/* Task List */}
+                  {loading ? (
+                    <p>Loading tasks...</p>
+                  ) : error ? (
+                    <div className="alert alert-danger">
+                      {error}
+                    </div>
+                  ) : tasks.length === 0 ? (
+                    <div className="alert alert-info">
+                      No tasks found for this project.
+                    </div>
+                  ) : (
+                    <div className="row g-3">
+                      {tasks.map((task) => (
+                        <div
+                          className="col-12"
+                          key={task._id}
+                        >
+                          <div className="card shadow-sm border-0">
+                            <div className="card-body">
+                              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3">
+                                <div className="flex-grow-1">
+                                  <h5 className="mb-2">
+                                    {task.name}
+                                  </h5>
+
+                                  <div className="mb-2">
+                                    <span
+                                      className={`badge ${getStatusClass(
+                                        task.status
+                                      )} me-2`}
+                                    >
+                                      {task.status}
+                                    </span>
+
+                                    <span
+                                      className={getPriorityClass(
+                                        task.priority
+                                      )}
+                                    >
+                                      {task.priority} Priority
+                                    </span>
+                                  </div>
+
+                                  <p className="text-muted mb-1">
+                                    <strong>Team:</strong>{" "}
+                                    {task.team?.name || "Not assigned"}
+                                  </p>
+
+                                  <p className="text-muted mb-1">
+                                    <strong>Owner:</strong>{" "}
+                                    {task.owners?.length
+                                      ? task.owners
+                                          .map((owner) => owner.name)
+                                          .join(", ")
+                                      : "Not assigned"}
+                                  </p>
+
+                                  <p className="text-muted mb-1">
+                                    <strong>Due Date:</strong>{" "}
+                                    {task.dueDate
+                                      ? new Date(
+                                          task.dueDate
+                                        ).toLocaleDateString()
+                                      : "Not set"}
+                                  </p>
+
+                                  <div className="mt-2 d-flex flex-wrap gap-2">
+                                    {task.tags?.map((tag) => (
+                                      <span
+                                        className="badge bg-light text-dark border"
+                                        key={tag._id}
+                                      >
+                                        {tag.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="d-flex flex-wrap gap-2">
+                                  <button
+                                    className="btn btn-outline-primary btn-sm"
+                                    onClick={() =>
+                                      navigate(`/tasks/${task._id}`)
+                                    }
+                                  >
+                                    View
+                                  </button>
+
+                                  <button
+                                    className="btn btn-outline-warning btn-sm"
+                                    onClick={() =>
+                                      navigate(
+                                        `/tasks/edit/${task._id}`
+                                      )
+                                    }
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
-
             </>
           )}
-
         </div>
-      </div>
+      </main>
     </div>
   );
 };

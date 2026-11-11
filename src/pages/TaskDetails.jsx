@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 
 function TaskDetails() {
   const { id } = useParams();
@@ -43,12 +44,21 @@ function TaskDetails() {
   }, [id, token]);
 
   if (loading) {
-    return <div className="container mt-4">Loading task details...</div>;
-  }
+  return (
+    <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
+      <Navbar />
+      <main className="flex-grow-1 p-3 p-md-4">
+        <p>Loading task details...</p>
+      </main>
+    </div>
+  );
+}
 
-  if (error) {
-    return (
-      <div className="container mt-4">
+if (error) {
+  return (
+    <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
+      <Navbar />
+      <main className="flex-grow-1 p-3 p-md-4">
         <div className="alert alert-danger">{error}</div>
         <button
           className="btn btn-secondary"
@@ -56,18 +66,29 @@ function TaskDetails() {
         >
           Back to Tasks
         </button>
-      </div>
-    );
-  }
+      </main>
+    </div>
+  );
+}
 
-  if (!task) {
-    return <div className="container mt-4">Task not found.</div>;
-  }
-
+if (!task) {
   return (
-    <div className="container py-4">
+    <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
+      <Navbar />
+      <main className="flex-grow-1 p-3 p-md-4">
+        <p>Task not found.</p>
+      </main>
+    </div>
+  );
+}
+
+return (
+  <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
+    <Navbar />
+
+    <main className="flex-grow-1 p-3 p-md-4" style={{ minWidth: 0 }}>
       <div className="card shadow-sm">
-        <div className="card-header d-flex justify-content-between align-items-center">
+        <div className="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
           <h4 className="mb-0">Task Details</h4>
 
           <button
@@ -80,7 +101,6 @@ function TaskDetails() {
 
         <div className="card-body">
           <h3>{task.name}</h3>
-
           <hr />
 
           <p>
@@ -142,8 +162,9 @@ function TaskDetails() {
           </p>
         </div>
       </div>
-    </div>
-  );
+    </main>
+  </div>
+);
 }
 
 export default TaskDetails;

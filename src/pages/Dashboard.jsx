@@ -9,6 +9,7 @@ const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [projectFilter, setProjectFilter] = useState("All");
@@ -24,7 +25,9 @@ const Dashboard = () => {
 
       const [projectResponse, taskResponse] = await Promise.all([
         fetch("https://workasana-backend-xi.vercel.app/projects", { headers }),
-        fetch("https://workasana-backend-xi.vercel.app/tasks?myTasks=true", { headers }),
+        fetch("https://workasana-backend-xi.vercel.app/tasks?myTasks=true", {
+          headers,
+        }),
       ]);
 
       const projectData = await projectResponse.json();
@@ -38,7 +41,10 @@ const Dashboard = () => {
         throw new Error(taskData.message || "Unable to fetch tasks.");
       }
 
-      setProjects(Array.isArray(projectData) ? projectData : projectData.projects || []);
+      setProjects(
+        Array.isArray(projectData) ? projectData : projectData.projects || []
+      );
+
       setTasks(Array.isArray(taskData) ? taskData : taskData.tasks || []);
     } catch (err) {
       setError(err.message || "Unable to load dashboard.");
@@ -57,32 +63,39 @@ const Dashboard = () => {
   }, [token]);
 
   const handleCreateProject = async (event) => {
-    event.preventDefault();
+  event.preventDefault();
 
-    try {
-      const response = await fetch("https://workasana-backend-xi.vercel.app/projects", {
+  try {
+    const response = await fetch(
+      "https://workasana-backend-xi.vercel.app/projects",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: projectName }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to create project.");
+        body: JSON.stringify({
+          name: projectName,
+          description: projectDescription,
+        }),
       }
+    );
 
-      setProjects((previous) => [...previous, data.project]);
-      setProjectName("");
-      setShowModal(false);
-    } catch (err) {
-      alert(err.message);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Unable to create project.");
     }
-  };
 
+    setProjects((previous) => [...previous, data.project]);
+
+    setProjectName("");
+    setProjectDescription("");
+    setShowModal(false);
+  } catch (err) {
+    alert(err.message);
+  }
+};
   const counts = {
     total: tasks.length,
     todo: tasks.filter((task) => task.status === "To Do").length,
@@ -114,17 +127,16 @@ const Dashboard = () => {
     );
   });
 
-  const filteredTasks = tasks.filter((task) => {
-    return taskFilter === "All" || task.status === taskFilter;
-  });
+  const filteredTasks = tasks.filter(
+    (task) => taskFilter === "All" || task.status === taskFilter
+  );
 
   return (
-    <div className="d-flex bg-light min-vh-100">
+    <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
       <Navbar />
 
-      <main className="flex-grow-1 p-4" style={{ minWidth: 0 }}>
+      <main className="flex-grow-1 p-3 p-md-4" style={{ minWidth: 0 }}>
         <div className="container-fluid">
-
           <input
             type="text"
             className="form-control mb-4"
@@ -143,11 +155,50 @@ const Dashboard = () => {
 
           {!loading && !error && (
             <>
+              {/* Task Summary */}
+              <div className="row g-3 mb-4">
+                <div className="col-6 col-lg-3">
+                  <div className="card border-0 shadow-sm h-100">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">Total Tasks</p>
+                      <h3 className="fw-bold">{counts.total}</h3>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-6 col-lg-3">
+                  <div className="card border-0 shadow-sm h-100">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">To Do</p>
+                      <h3 className="fw-bold">{counts.todo}</h3>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-6 col-lg-3">
+                  <div className="card border-0 shadow-sm h-100">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">In Progress</p>
+                      <h3 className="fw-bold">{counts.progress}</h3>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-6 col-lg-3">
+                  <div className="card border-0 shadow-sm h-100">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">Completed</p>
+                      <h3 className="fw-bold">{counts.completed}</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Projects Section */}
-              <div className="d-flex justify-content-between align-items-center mb-3">
+              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-3">
                 <h3 className="fw-bold mb-0">Projects</h3>
 
-                <div className="d-flex gap-2">
+                <div className="d-flex flex-column flex-sm-row gap-2">
                   <select
                     className="form-select"
                     value={projectFilter}
@@ -170,7 +221,9 @@ const Dashboard = () => {
 
               <div className="row g-3 mb-5">
                 {filteredProjects.length === 0 ? (
-                  <p className="text-muted">No projects found.</p>
+                  <div className="col-12">
+                    <p className="text-muted">No projects found.</p>
+                  </div>
                 ) : (
                   filteredProjects.map((project) => {
                     const projectTasks = tasks.filter(
@@ -181,8 +234,15 @@ const Dashboard = () => {
                       (task) => task.status === "Completed"
                     ).length;
 
+                    const progress = projectTasks.length
+                      ? (completed / projectTasks.length) * 100
+                      : 0;
+
                     return (
-                      <div className="col-12 col-md-6 col-xl-4" key={project._id}>
+                      <div
+                        className="col-12 col-md-6 col-xl-4"
+                        key={project._id}
+                      >
                         <div className="card border-0 shadow-sm h-100">
                           <div className="card-body">
                             <span className="badge bg-primary-subtle text-primary mb-3">
@@ -199,16 +259,13 @@ const Dashboard = () => {
                               {completed} tasks completed
                             </p>
 
-                            <div className="progress mt-3" style={{ height: "6px" }}>
+                            <div
+                              className="progress mt-3"
+                              style={{ height: "6px" }}
+                            >
                               <div
                                 className="progress-bar"
-                                style={{
-                                  width: `${
-                                    projectTasks.length
-                                      ? (completed / projectTasks.length) * 100
-                                      : 0
-                                  }%`,
-                                }}
+                                style={{ width: `${progress}%` }}
                               ></div>
                             </div>
                           </div>
@@ -220,10 +277,10 @@ const Dashboard = () => {
               </div>
 
               {/* My Tasks Section */}
-              <div className="d-flex justify-content-between align-items-center mb-3">
+              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-3">
                 <h3 className="fw-bold mb-0">My Tasks</h3>
 
-                <div className="d-flex gap-2">
+                <div className="d-flex flex-column flex-sm-row gap-2">
                   <select
                     className="form-select"
                     value={taskFilter}
@@ -236,7 +293,10 @@ const Dashboard = () => {
                     <option value="Blocked">Blocked</option>
                   </select>
 
-                  <Link to="/tasks/add" className="btn btn-primary text-nowrap">
+                  <Link
+                    to="/tasks/add"
+                    className="btn btn-primary text-nowrap"
+                  >
                     + New Task
                   </Link>
                 </div>
@@ -319,7 +379,7 @@ const Dashboard = () => {
           tabIndex="-1"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable mx-2 mx-sm-auto">
             <div className="modal-content">
               <form onSubmit={handleCreateProject}>
                 <div className="modal-header">
@@ -332,6 +392,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="modal-body">
+                <div className="mb-3">
                   <label className="form-label">Project Name</label>
                   <input
                     type="text"
@@ -342,6 +403,21 @@ const Dashboard = () => {
                     required
                   />
                 </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Project Description</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="Enter project description"
+                        value={projectDescription}
+                        onChange={(event) =>
+                          setProjectDescription(event.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
 
                 <div className="modal-footer">
                   <button

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 
 const API_URL = "https://workasana-backend-xi.vercel.app";
 
@@ -189,25 +190,41 @@ function EditTask() {
   };
 
   if (loading) {
-    return <div className="container mt-4">Loading task details...</div>;
-  }
+  return (
+    <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
+      <Navbar />
+      <main className="flex-grow-1 p-3 p-md-4">
+        Loading task details...
+      </main>
+    </div>
+  );
+}
 
-  if (error && !formData.name) {
-    return (
-      <div className="container mt-4">
+if (error && !formData.name) {
+  return (
+    <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
+      <Navbar />
+
+      <main className="flex-grow-1 p-3 p-md-4">
         <div className="alert alert-danger">{error}</div>
+
         <button
           className="btn btn-secondary"
           onClick={() => navigate("/tasks")}
         >
           Back to Tasks
         </button>
-      </div>
-    );
-  }
+      </main>
+    </div>
+  );
+}
 
   return (
-    <div className="container py-4">
+  <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
+    <Navbar />
+
+    <main className="flex-grow-1 p-3 p-md-4" style={{ minWidth: 0 }}>
+      <div className="container-fluid py-2">
       <div className="row justify-content-center">
         <div className="col-lg-8">
           <div className="card shadow-sm">
@@ -392,8 +409,10 @@ function EditTask() {
           </div>
         </div>
       </div>
-    </div>
-  );
+          </div>
+    </main>
+  </div>
+);
 }
 
 export default EditTask;

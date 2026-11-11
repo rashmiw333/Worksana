@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 
 import {
   Chart as ChartJS,
@@ -26,7 +26,6 @@ ChartJS.register(
 
 const Reports = () => {
   const { token } = useAuth();
-  const navigate = useNavigate();
 
   const [lastWeek, setLastWeek] = useState({
     totalCompleted: 0,
@@ -60,9 +59,18 @@ const Reports = () => {
 
         const [lastWeekResponse, pendingResponse, closedResponse] =
           await Promise.all([
-            fetch("https://workasana-backend-xi.vercel.app/report/last-week", { headers }),
-            fetch("https://workasana-backend-xi.vercel.app/report/pending", { headers }),
-            fetch("https://workasana-backend-xi.vercel.app/report/closed-tasks", { headers }),
+            fetch(
+              "https://workasana-backend-xi.vercel.app/report/last-week",
+              { headers }
+            ),
+            fetch(
+              "https://workasana-backend-xi.vercel.app/report/pending",
+              { headers }
+            ),
+            fetch(
+              "https://workasana-backend-xi.vercel.app/report/closed-tasks",
+              { headers }
+            ),
           ]);
 
         const responses = [
@@ -165,6 +173,20 @@ const Reports = () => {
     ],
   };
 
+  // Total days of work pending chart
+  const pendingDaysChartData = {
+    labels: ["Pending Work"],
+    datasets: [
+      {
+        label: "Total Pending Days",
+        data: [pending.totalPendingDays || 0],
+        backgroundColor: "#f6c23e",
+        borderRadius: 6,
+        barThickness: 50,
+      },
+    ],
+  };
+
   // Prepare team chart
   const teamChartData = {
     labels: Object.keys(closedTasks.byTeam || {}),
@@ -191,34 +213,29 @@ const Reports = () => {
     ],
   };
 
-  //  chart options
+  // Vertical chart options
   const verticalChartOptions = {
     ...chartOptions,
     indexAxis: "x",
   };
 
   return (
-    <div className="container-fluid bg-light min-vh-100">
+    <div className="d-flex flex-column flex-md-row bg-light min-vh-100">
 
-      {/* Header */}
-      <div className="bg-white border-bottom p-3">
-        <h3 className="text-center mb-0">Workasana Reports</h3>
-      </div>
+      {/* Shared Responsive Sidebar */}
+      <Navbar />
 
-      <div className="row">
+      {/* Main Content */}
+      <main
+        className="flex-grow-1 p-3 p-md-4"
+        style={{ minWidth: 0 }}
+      >
+        <div className="container-fluid p-0">
 
-        {/* Sidebar */}
-        <div className="col-md-3 col-lg-2 bg-white border-end min-vh-100 p-4">
-          <button
-            className="btn btn-outline-primary w-100"
-            onClick={() => navigate("/dashboard")}
-          >
-            Back to Dashboard
-          </button>
-        </div>
-
-        {/* Main Content */}
-        <div className="col-md-9 col-lg-10 p-4">
+          {/* Header */}
+          <div className="bg-white border-bottom rounded shadow-sm p-3 mb-4">
+            <h3 className="mb-0">Workasana Reports</h3>
+          </div>
 
           <h4 className="mb-4">Report Overview</h4>
 
@@ -232,7 +249,7 @@ const Reports = () => {
               {/* Summary Cards */}
               <div className="row mb-4">
 
-                <div className="col-md-6 col-xl-3 mb-3">
+                <div className="col-12 col-sm-6 col-xl-3 mb-3">
                   <div className="card shadow-sm border-0 h-100">
                     <div className="card-body">
                       <p className="text-muted mb-2">
@@ -245,7 +262,7 @@ const Reports = () => {
                   </div>
                 </div>
 
-                <div className="col-md-6 col-xl-3 mb-3">
+                <div className="col-12 col-sm-6 col-xl-3 mb-3">
                   <div className="card shadow-sm border-0 h-100">
                     <div className="card-body">
                       <p className="text-muted mb-2">
@@ -258,7 +275,7 @@ const Reports = () => {
                   </div>
                 </div>
 
-                <div className="col-md-6 col-xl-3 mb-3">
+                <div className="col-12 col-sm-6 col-xl-3 mb-3">
                   <div className="card shadow-sm border-0 h-100">
                     <div className="card-body">
                       <p className="text-muted mb-2">
@@ -271,7 +288,7 @@ const Reports = () => {
                   </div>
                 </div>
 
-                <div className="col-md-6 col-xl-3 mb-3">
+                <div className="col-12 col-sm-6 col-xl-3 mb-3">
                   <div className="card shadow-sm border-0 h-100">
                     <div className="card-body">
                       <p className="text-muted mb-2">
@@ -288,7 +305,7 @@ const Reports = () => {
 
               {/* Weekly Work Chart */}
               <div className="card shadow-sm border-0 mb-4">
-                <div className="card-body p-4">
+                <div className="card-body p-3 p-md-4">
                   <h5 className="mb-4">
                     Total Work Done Last Week
                   </h5>
@@ -302,12 +319,49 @@ const Reports = () => {
                 </div>
               </div>
 
+              {/* Total Days of Work Pending Chart */}
+              <div className="card shadow-sm border-0 mb-4">
+                <div className="card-body p-3 p-md-4">
+                  <h5 className="mb-4">
+                    Total Days of Work Pending
+                  </h5>
+
+                  <div style={{ height: "300px" }}>
+                    <Bar
+                      data={pendingDaysChartData}
+                      options={{
+                        ...chartOptions,
+                        plugins: {
+                          legend: {
+                            display: false,
+                          },
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: {
+                              precision: 0,
+                              stepSize: 1,
+                            },
+                            title: {
+                              display: true,
+                              text: "Number of Days",
+                            },
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Team and Owner Charts */}
               <div className="row">
 
-                <div className="col-lg-6 mb-4">
+                {/* Tasks Closed by Team */}
+                <div className="col-12 col-lg-6 mb-4">
                   <div className="card shadow-sm border-0 h-100">
-                    <div className="card-body p-4">
+                    <div className="card-body p-3 p-md-4">
                       <h5 className="mb-4">
                         Tasks Closed by Team
                       </h5>
@@ -319,7 +373,8 @@ const Reports = () => {
                       ) : (
                         <div style={{ height: "300px" }}>
                           <Bar
-                              data={teamChartData} options={verticalChartOptions}
+                            data={teamChartData}
+                            options={verticalChartOptions}
                           />
                         </div>
                       )}
@@ -327,9 +382,10 @@ const Reports = () => {
                   </div>
                 </div>
 
-                <div className="col-lg-6 mb-4">
+                {/* Tasks Closed by Owner */}
+                <div className="col-12 col-lg-6 mb-4">
                   <div className="card shadow-sm border-0 h-100">
-                    <div className="card-body p-4">
+                    <div className="card-body p-3 p-md-4">
                       <h5 className="mb-4">
                         Tasks Closed by Owner
                       </h5>
@@ -341,7 +397,8 @@ const Reports = () => {
                       ) : (
                         <div style={{ height: "300px" }}>
                           <Bar
-                            data={ownerChartData} options={verticalChartOptions}
+                            data={ownerChartData}
+                            options={verticalChartOptions}
                           />
                         </div>
                       )}
@@ -355,7 +412,7 @@ const Reports = () => {
           )}
 
         </div>
-      </div>
+      </main>
     </div>
   );
 };
